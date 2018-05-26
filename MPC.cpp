@@ -7,7 +7,7 @@ using CppAD::AD;
 
 // TODO: Set the timestep length and duration
 size_t N = 10;
-double dt = 0.1;
+double dt = 0.06;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -23,8 +23,7 @@ const double Lf = 2.67;
 
 double ref_cte=0;
 double ref_epsi=0;
-double ref_v=10;
-
+double ref_v=50;
 size_t x_start=0;
 size_t y_start=x_start+N;
 size_t psi_start=y_start+N;
@@ -95,7 +94,7 @@ class FG_eval {
       AD<double>delta0=vars[delta_start+i];
       AD<double>a0=vars[a_start+i];
 
-      AD<double>f0=coeffs[0]+coeffs[1]*x0+coeffs[2]*x0*x0+coeffs[2]*x0*x0*x0;
+      AD<double>f0=coeffs[0]+coeffs[1]*x0+coeffs[2]*x0*x0+coeffs[3]*x0*x0*x0;
       AD<double>psides0=CppAD::atan(3*coeffs[3]*x0*x0+2*coeffs[2]*x0+coeffs[1]);
 
       fg[2+x_start+i]=x1-(x0+v0*CppAD::cos(psi0)*dt);
@@ -147,6 +146,13 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   for (int i = 0; i < n_vars; i++) {
     vars[i] = 0;
   }
+
+ vars[x_start] = x;
+ vars[y_start] = y;
+ vars[psi_start] = psi;
+ vars[v_start] = v;
+ vars[cte_start] = cte;
+ vars[epsi_start] = epsi;
 
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
@@ -238,7 +244,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // creates a 2 element double vector.
   vector<double> result;
 
-  result.push_back(solution.x[delta_start+1]);
+  result.push_back(solution.x[delta_start]);
   result.push_back(solution.x[a_start]);
 
   for(int i=0;i<N-1;i++)

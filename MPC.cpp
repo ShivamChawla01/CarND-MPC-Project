@@ -54,19 +54,20 @@ class FG_eval {
       fg[0]+=2000*CppAD::pow(vars[epsi_start+i]-ref_epsi,2);
       fg[0]+=CppAD::pow(vars[v_start+i]-ref_v,2);
     }
-
+    
     for(int i=0;i<N-1;i++)
     {
-      fg[0]+=5*CppAD::pow(vars[delta_start+i+1]-vars[delta_start+i],2);
-      fg[0]+=5*CppAD::pow(vars[a_start+i+1]-vars[a_start+i],2);
+      
+      fg[0]+=5*CppAD::pow(vars[delta_start+i],2);
+      fg[0]+=5*CppAD::pow(vars[a_start+i],2);
     }
-
+    
     for(int i=0;i<N-2;i++)
     {
       fg[0]+=200*CppAD::pow(vars[delta_start+i+1]-vars[delta_start+i],2);
       fg[0]+=10*CppAD::pow(vars[a_start+i+1]-vars[a_start+i],2);
     }
-
+    
     fg[1+x_start]=vars[x_start];
     fg[1+y_start]=vars[y_start];
     fg[1+psi_start]=vars[psi_start];
@@ -106,7 +107,9 @@ class FG_eval {
      
 
     }
+    
   }
+  
 };
 
 //
@@ -117,7 +120,7 @@ MPC::~MPC() {}
 
 vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   bool ok = true;
-  size_t i;
+  size_t i=20;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
   // TODO: Set the number of model variables (includes both states and inputs).
@@ -126,6 +129,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   //
   // 4 * 10 + 2 * 9
 
+
    double x = state[0];
   double y = state[1];
   double psi = state[2];
@@ -133,7 +137,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   double cte = state[4];
   double epsi = state[5];
 
-  size_t n_vars = N*6+(N-2)*2;
+  size_t n_vars = N*6+(N-1)*2;
   // TODO: Set the number of constraints
   size_t n_constraints = N*6;
 
@@ -213,10 +217,13 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   CppAD::ipopt::solve_result<Dvector> solution;
 
   // solve the problem
+
+
+  
   CppAD::ipopt::solve<Dvector, FG_eval>(
       options, vars, vars_lowerbound, vars_upperbound, constraints_lowerbound,
       constraints_upperbound, fg_eval, solution);
-
+  
   // Check some of the solution values
   ok &= solution.status == CppAD::ipopt::solve_result<Dvector>::success;
 
@@ -231,7 +238,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // creates a 2 element double vector.
   vector<double> result;
 
-  result.push_back(solution.x[delta_start]);
+  result.push_back(solution.x[delta_start+1]);
   result.push_back(solution.x[a_start]);
 
   for(int i=0;i<N-1;i++)

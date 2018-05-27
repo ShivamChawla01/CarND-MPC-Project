@@ -51,11 +51,11 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
   assert(order >= 1 && order <= xvals.size() - 1);
   Eigen::MatrixXd A(xvals.size(), order + 1);
 
-  for ( int i = 0; i < xvals.size(); i++) {
+  for (int i = 0; i < xvals.size(); i++) {
     A(i, 0) = 1.0;
   }
 
-  for ( int j = 0; j < xvals.size(); j++) {
+  for (int j = 0; j < xvals.size(); j++) {
     for (int i = 0; i < order; i++) {
       A(j, i + 1) = A(j, i) * xvals(j);
     }
@@ -67,10 +67,11 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
 }
 
 int main() {
-  uWS::Hub h;
-
-  // MPC is initialized here!
-  MPC mpc;
+  
+   uWS::Hub h;
+  
+   // MPC is initialized here!
+   MPC mpc;
 
   h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -80,7 +81,7 @@ int main() {
     string sdata = string(data).substr(0, length);
     cout << sdata << endl;
     double Lf = 2.67;
-    cout << "check 1";
+ 
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       
@@ -95,14 +96,15 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+
           double delta= j[1]["steering_angle"];
           double a = j[1]["throttle"];
-          //cout << "check 1";
+         
           /*
           * TODO: Calculate steering angle and throttle using MPC.
           */
 
-          // Shifting the car reference angle top 90 degree.
+          
 
           auto ptsx_transform = Eigen::VectorXd(ptsx.size());
           auto ptsy_transform = Eigen::VectorXd(ptsx.size());
@@ -110,41 +112,34 @@ int main() {
           {
             double shift_ptsx = ptsx[i] - px;
             double shift_ptxy = ptsy[i] - py;
-            double minus_psi = 0.0 - psi;
-            ptsx_transform( i ) = shift_ptsx * cos(minus_psi) - shift_ptxy * sin(minus_psi);
-            ptsy_transform( i ) = shift_ptsx * sin(minus_psi) + shift_ptxy * cos(minus_psi);
+            double m_psi = 0.0 - psi;
+            ptsx_transform( i ) = shift_ptsx * cos(m_psi) - shift_ptxy * sin(m_psi);
+            ptsy_transform( i ) = shift_ptsx * sin(m_psi) + shift_ptxy * cos(m_psi);
           }
-          //cout << "check 2";
+          
 
           // Fit 3rd order polynomial to the points.
           auto coeffs = polyfit (ptsx_transform, ptsy_transform, 3);
           
-           //calculate the cross track error.
-          double cte = polyeval (coeffs , 0);
-      
-          //calculate the orientation error
-          double epsi = - atan(coeffs[1]);         
-          //cout << "check 5";  
-          /* Both are in between [-1, 1].
-          *
-          */
+                
+          
          
           // Latency
-          const double latency_evl = 0.1;
+          const double latency = 0.1;
 
           // Initial state values.
-          const double px_initial = 0;
-          const double py_initial = 0;
-          const double psi_initial = 0;
-          const double cte_initial = coeffs[0];
-          const double epsi_initial = -atan(coeffs[1]);
+          const double px_init = 0;
+          const double py_init = 0;
+          const double psi_init = 0;
+          const double cte_init = coeffs[0];
+          const double epsi_init = -atan(coeffs[1]);
 
-          double px_now = px_initial + ( v * cos(psi_initial) * latency_evl);
-          double py_now = py_initial + (v * (sin(psi_initial)) * latency_evl);
-          double psi_now = py_initial - ( v * delta * latency_evl / Lf) ;
-          double v_now = v + a * latency_evl;
-          double cte_now = cte_initial + (v * sin(epsi_initial) * latency_evl);
-          double epsi_now = epsi_initial - (v * atan(coeffs[1]) * latency_evl / Lf) ; 
+          double px_now = px_init + ( v * cos(psi_init) * latency);
+          double py_now = py_init + (v * (sin(psi_init)) * latency);
+          double psi_now = py_init - ( v * delta * latency / Lf) ;
+          double v_now = v + a * latency;
+          double cte_now = cte_init + (v * sin(epsi_init) * latency);
+          double epsi_now = epsi_init - (v * atan(coeffs[1]) * latency / Lf) ; 
 
           //defining the state vector 
           Eigen::VectorXd state(6);
@@ -183,7 +178,6 @@ int main() {
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
 
-          //Display the waypoints/reference line
           vector<double> next_x_vals;
           vector<double> next_y_vals;
           
@@ -255,4 +249,4 @@ int main() {
     return -1;
   }
   h.run();
-} 
+}
